@@ -1,0 +1,108 @@
+---
+title: "Proto-proposal 10 data scouting"
+author: "Dan Nissley"
+date: "2024-10-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Proto-proposal 10, Oceans of Disorder
+
+Download the raw data and unpack it
+```{r}
+
+# setup file names for download and unpacking
+#tara_oceans_project_url <- "https://doi.pangaea.de/10.1594/PANGAEA.875582?format=zip"
+local_filepath <- "raw-data/dataset875582.zip"
+unpacked_folder <- "raw-data/PANGAEA.875582"
+
+# download the file from the web
+#download.file(url      = tara_oceans_project_url, 
+#              destfile = local_filepath, 
+#              method   = "auto")
+
+# unzip it
+unzip(local_filepath, 
+      exdir = unpacked_folder)
+```
+
+
+```{R}
+
+library("dplyr")
+library("readr")
+library("ggplot2")
+
+```
+
+```{r}
+# get the file paths to the data; these three files
+prefix    <- "raw-data/PANGAEA.875582/datasets/"
+
+# Environmental context of all samples from the Tara Oceans Expedition (2009-2013), 
+# about sensor data in the targeted environmental features
+filepath1 <- paste0(prefix, "TARA_ENV_DEPTH_SENSORS.tab")
+#filepath2 <- paste0(prefix, "TARA_SAMPLES_CONTEXT_ENV-WATERCOLUMN.tab")
+#filepath3 <- paste0(prefix, "TARA_SAMPLES_CONTEXT_ENV-WATERCOLUMN_2.tab")
+
+# Environmental context of all samples from the Tara Oceans Expedition (2009-2013), 
+# about mesoscale features at the sampling location.
+# read in the files; the values of skip were determined by manual inspection;
+# you can find them by searching for the string "*/" in each file 
+data1 <- readr::read_delim(filepath1, skip = 2597, delim = "\t")
+#data2 <- readr::read_delim(filepath2, skip = 2522, delim = "\t")
+#data3 <- readr::read_delim(filepath3, skip = 2572, delim = "\t")
+
+# get the dimensions of each
+dim(data1)
+#dim(data2)
+#dim(data3)
+
+# get the list of unique methods from data1
+method_device1 <- data1 %>% distinct(data1$`Method/Device`)
+#method_device2 <- data2 %>% distinct(data2$`Method/Device`)
+#method_device3 <- data3 %>% distinct(data3$`Method/Device`)
+
+```
+```{r}
+method1_table <- table(as.factor(data1$`Method/Device`))
+method1_table
+
+RVSS <- data1 %>% filter(`Method/Device` == "Rosette Vertical Sampling System")
+
+# convert to numeric
+RVSS$`Depth nominal (from which this sample was co...)` <- as.numeric(as.character(RVSS$`Depth nominal (from which this sample was co...)`))
+RVSS$`Temp [°C] (median value (50th percentile...)` <- as.numeric(as.character(RVSS$`Temp [°C] (median value (50th percentile...)`))
+
+# temperature versus depth
+ggplot(RVSS, 
+       aes(x = `Depth nominal (from which this sample was co...)`, 
+           y = `Temp [°C] (median value (50th percentile...)`)
+       ) + 
+       geom_point() + 
+       labs(x = "Nominal depth, m", y = "Median T, °C", title = "Temp as function of depth")
+
+# histogram of depth
+ggplot(RVSS, 
+       aes(x = `Depth nominal (from which this sample was co...)`)) +
+       geom_histogram(binwidth = 5, color = "black", fill = "skyblue") +
+       labs(x = "Nominal depth, m", y = "Frequency", title = "RVSS depth histogram")
+
+# histogram of temperature
+ggplot(RVSS, 
+       aes(x = `Temp [°C] (median value (50th percentile...)`)) +
+       geom_histogram(binwidth = 1, color = "black", fill = "skyblue") +
+       labs(x = "Temperature, °C", y = "Frequency", title = "RVSS temp histogram")
+
+#method2_table <- table(as.factor(data2$`Method/Device`))
+#method2_table
+
+#method3_table <- table(as.factor(data3$`Method/Device`))
+#method3_table
+
+#data1$`Depth nominal (from which this sample was co...)`
+```
+
